@@ -12,7 +12,7 @@ current features
 # license
 gpl3+
 
-dependencies
+# dependencies
 * [guile](https://www.gnu.org/software/guile/guile.html) >= 2.2
 * [sph-lib](https://github.com/sph-mn/sph-lib)
 
