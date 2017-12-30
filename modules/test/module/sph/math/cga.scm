@@ -15,12 +15,16 @@
 
   (test-execute-procedures-lambda blade-id->string (blade-count 1 2 2 4 3 8 4 16 5 32 6 64)
     (blade-ids 1 #t 2 #t 3 #t 4 #t 5 #t 6 #t) (mv-null? ((unquote (mv-new))) #t)
-    (blade-geometric-product (unquote (list (blade-new 1 3) (blade-new 2 4))) (3 . 12))
+    (blade-ip (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 1))
+    (blade-op (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 0))
+    (blade-gp (unquote (list (blade-new 1 3) (blade-new 2 4))) (3 . 12)
+      (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 1)
+      (unquote (list (blade-new 1 1) (blade-new 2 1))) (3 . 1))
     (mv-simplify
       ( (unquote
           (mv-new (blade-new 1 3) (blade-new 2 4) (blade-new 2 3) (blade-new 2 3) (blade-new 1 4))))
       ((1 . 7) (2 . 10)))
-    (mv-geometric-product
+    (mv-gp
       (unquote
         (list (mv-new (blade-new 1 3) (blade-new 2 4)) (mv-new (blade-new 1 5) (blade-new 2 9))))
       #t)))

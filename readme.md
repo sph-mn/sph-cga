@@ -1,12 +1,12 @@
 experimental code for implementing geometric algebras.
-see also [learning about conformal geometric algebra 2017](http://sph.mn/c/view/13e)
+see also [learning about conformal geometric algebra 2017](http://sph.mn/c/view/13e).
 
 not thoroughly validated and largely didactic at this point.
 
 current features
-* basis blades and multivectors
+* basis blade and multivector objects
 * k-blade pre-generation for the desired number of dimensions
-* some basic operations on basis blades and multivectors
+* geometric/inner/outer product for basis blades and multivectors
 * no macros and optimisations yet
 
 # license
@@ -26,43 +26,52 @@ copy or link the path ``sph/math/cga.scm`` into a path that is listed in the env
 
 # module exports
 ```
-blade-conjugate
-blade-count
-blade-equal?
-blade-geometric-product
-blade-grade
-blade-grade-inversion
-blade-id
-blade-id->string
+sph-math-cga-description
+bit-range
+bit-count
+factorial
 blade-id-grade
-blade-id-less?
 blade-id-sign
+blade-id->string
+blade-id-from-string
+blade-id-less?
 blade-ids
-blade-inner-product
-blade-new
-blade-outer-product
+blade-equal?
+blade-gp
+blade-op
+blade-ip-f
+blade-ip
+blade-grade-inversion
 blade-reverse
+blade-conjugate
+blade-new
+blade-id
 blade-scalar
-mv-dual
-mv-geometric-product
-mv-grade-inversion
-mv-inner-product
+blade-count
+blade-grade
 mv-new
+mv-simplify
+mv-op
+mv-ip
+mv-gp
+mv-sum
+mv-subtract
 mv-null?
-mv-outer-product
 mv-reverse
+mv-grade-inversion
+mv-dual
 mv-scalar
 mv-scalar-product
-mv-simplify
-mv-subtract
-mv-sum
+mv-type
+mv-types-new
+space-new
 ```
 
 # example usage
 ```
 (import (sph math cga))
 
-(mv-geometric-product
+(mv-gp
   (mv-new (blade-new 1 3) (blade-new 2 4))
   (mv-new (blade-new 1 5) (blade-new 2 9)))
 ```

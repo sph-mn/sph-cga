@@ -3,42 +3,49 @@
     blade-conjugate
     blade-count
     blade-equal?
-    blade-geometric-product
+    blade-gp
     blade-grade
     blade-grade-inversion
     blade-id
     blade-id->string
+    blade-id-from-string
     blade-id-grade
     blade-id-less?
     blade-id-sign
     blade-ids
-    blade-inner-product
+    blade-ip
     blade-new
-    blade-outer-product
+    blade-op
     blade-reverse
     blade-scalar
     mv-dual
-    mv-geometric-product
+    mv-gp
     mv-grade-inversion
-    mv-inner-product
+    mv-ip
     mv-new
     mv-null?
-    mv-outer-product
+    mv-op
     mv-reverse
     mv-scalar
     mv-scalar-product
     mv-simplify
     mv-subtract
     mv-sum
+    space-new
     sph-math-cga-description)
   (import
     (rnrs arithmetic bitwise)
     (sph)
+    (only (guile) string-split string-join)
     (only (rnrs sorting) list-sort)
+    (only (sph alist) alist-q)
+    (only (sph list one) group)
     (only (sph list)
       produce
+      map-map
       map-integers
-      list-sort-with-accessor))
+      list-sort-with-accessor)
+    (only (sph string) string-equal?))
 
   (define sph-math-cga-description
     "mostly non-optimising implementation of geometric algebra elements.
@@ -86,29 +93,34 @@
         (loop (+ sum (blade-id-grade (bitwise-and n b))) (bitwise-arithmetic-shift-right n 1)))))
 
   (define (blade-id->string a)
-    "integer ->string
+    "integer -> string
      return a string name for a basis blade id"
     (let loop ((a a) (grade 0) (numbers null))
-      (if (zero? a) (if (> grade 0) (apply string-append "e" (reverse numbers)) "s")
+      (if (zero? a) (if (> grade 0) (string-join (reverse numbers) "e" (q prefix)) "s")
         (loop (bitwise-arithmetic-shift-right a 1) (+ grade 1)
           (if (= 1 (bitwise-and 1 a)) (pair (number->string (+ grade 1)) numbers) numbers)))))
 
+  (define (blade-id-from-string a) "string -> integer"
+    (if (string-equal? "s" a) 0
+      (fold (l (a result) (bitwise-xor result (expt 2 (- a 1)))) 0
+        (map string->number (tail (string-split a #\e))))))
+
   (define (blade-id-less? a b)
     "integer integer -> boolean
-     compare blade ids for sorting considering grade primarily and value secondarily"
+     compare blade ids for sorting. considers grade primarily and id value secondarily"
     (or (< (blade-id-grade a) (blade-id-grade b)) (< a b)))
 
-  (define (blade-ids metric)
+  (define (blade-ids dimensions)
     "(integer ...) -> (pair:blade ...)
      create basis blade ids for all grades for the given metric signature.
      the result list will have (expt 2 dimensions) elements"
-    (list-sort blade-id-less? (map-integers (expt 2 (length metric)) identity)))
+    (list-sort blade-id-less? (map-integers (expt 2 dimensions) identity)))
 
   (define (blade-equal? a b)
     "note: float scalar comparison can be inexact and lead to unexpected results"
     (and (= (blade-id a) (blade-id b)) (= (blade-scalar a) (blade-scalar b))))
 
-  (define* (blade-geometric-product a b #:optional metric)
+  (define* (blade-gp a b #:optional metric)
     "blade blade [(integer ...)] -> blade
      create a new basis blade that represents the geometric product of two basis blades"
     (let*
@@ -122,15 +134,14 @@
               (if (zero? (bitwise-and 1 meet)) scale (* scale (first metric))) (tail metric))))
         (blade-new id scale))))
 
-  (define (blade-outer-product a b)
+  (define (blade-op a b)
     "blade -> blade
      creates a new blade that represents the result of the outer product
      for the given basis blades"
     ; if any overlap then zero
-    (if (zero? (bitwise-and (blade-id a) (blade-id b))) (blade-geometric-product a b)
-      (blade-new 0 0)))
+    (if (zero? (bitwise-and (blade-id a) (blade-id b))) (blade-gp a b) (blade-new 0 0)))
 
-  (define (blade-inner-product-f a grade-a grade-b type)
+  (define (blade-ip-f a grade-a grade-b type)
     "blade integer integer symbol -> blade
      convert a geometric product to an inner product.
      type: left/right/h, where left/right is for contraction"
@@ -144,9 +155,10 @@
           (if (or (zero? grade-a) (zero? grade-b)) (blade-new 0 0)
             (if (= a-grade (abs (- grade-a grade-b))) a (blade-new 0 0)))))))
 
-  (define* (blade-inner-product a b #:optional metric type)
-    (blade-inner-product-f (blade-geometric-product a b metric) (blade-grade a)
-      (blade-grade b) (or type (q left))))
+  (define* (blade-ip a b #:optional metric type)
+    "blade blade [list symbol] -> blade
+     create a basis blade that represents the inner product of the arguments"
+    (blade-ip-f (blade-gp a b metric) (blade-grade a) (blade-grade b) (or type (q left))))
 
   (define (blade-grade-inversion a)
     "blade -> blade
@@ -191,17 +203,16 @@
                 (pair (blade-new (blade-id a) (+ (blade-scalar a) (blade-scalar (first b))))
                   (tail b)))))))))
 
-  (define (mv-outer-product a b) (mv-simplify (produce blade-outer-product a b)))
-  (define (mv-geometric-product a b) (mv-simplify (produce blade-geometric-product a b)))
+  (define (mv-op a b) (mv-simplify (produce blade-op a b)))
 
-  (define* (mv-inner-product a b #:optional metric type)
-    (mv-simplify (produce (l (a b) (blade-inner-product a b metric type)) a b)))
+  (define* (mv-ip a b #:optional metric type)
+    (mv-simplify (produce (l (a b) (blade-ip a b metric type)) a b)))
 
-  (define mv-geometric-product
+  (define mv-gp
     (let (scalar-gp (l (a b) (map (l (a) (blade-new (blade-id a) (* b (blade-scalar a)))) a)))
-      (l* (a b #:optional metric)
-        (if (pair? a) (if (pair? b) (produce blade-geometric-product a b) (scalar-gp a b))
-          (scalar-gp b a)))))
+      (l* (a b #:optional metric) "mv/scala mv/scalar list -> mv"
+        (mv-simplify
+          (if (pair? a) (if (pair? b) (produce blade-gp a b) (scalar-gp a b)) (scalar-gp b a))))))
 
   (define (mv-sum . a) "mv/scalar ... -> mv"
     (mv-simplify (apply append (map (l (a) (if (pair? a) a (blade-new 0 a))) a))))
@@ -209,20 +220,44 @@
   (define (mv-subtract a . b) "mv/scalar ... -> mv"
     (mv-simplify
       (fold
-        (l (b result)
-          (if (pair? b) (append (mv-geometric-product b -1) result)
-            (pair (blade-new 0 (- a)) result)))
+        (l (b result) (if (pair? b) (append (mv-gp b -1) result) (pair (blade-new 0 (- a)) result)))
         null b)))
 
-  (define (mv-null? a) (null? (mv-simplify a)))
+  (define (mv-null? a)
+    "mv -> boolean
+     null if empty or all blades have a scale of 0"
+    (null? (mv-simplify a)))
+
   (define (mv-reverse a) (map blade-reverse a))
   (define (mv-grade-inversion a) (map blade-grade-inversion a))
 
-  (define (mv-dual a metric)
-    (mv-inner-product
-      (mv-new (blade-new (- (bitwise-arithmetic-shift-left 1 (length metric)) 1) 1)) metric))
+  (define (mv-dual a metric) "mv list ->"
+    (mv-ip (mv-new (blade-new (- (bitwise-arithmetic-shift-left 1 (length metric)) 1) 1)) metric))
 
-  (define (mv-scalar a) (apply + (filter (l (a) (zero? (blade-id a))) a)))
+  (define (mv-scalar a)
+    "mv -> scalar
+     returns the sum of all scalar values in multivector (not the pseudoscalar)"
+    (apply + (filter (l (a) (zero? (blade-id a))) a)))
 
   (define* (mv-scalar-product a b #:optional metric) "list:mv list:mv [list:metric]-> mv"
-    (mv-scalar (mv-inner-product a b metric))))
+    (mv-scalar (mv-ip a b metric)))
+
+  (define (mv-type base-names)
+    "string ... -> procedure:{scalar ... -> mv}
+     returns a procedure that when called with scalars returns a multivector with the
+     bases specified by base-names"
+    (let (bases (map blade-id-from-string base-names)) (l a (map blade-new bases a))))
+
+  (define (mv-types-new config) "((string ...) ...) -> (procedure ...)" (map mv-type config))
+
+  (define* (space-new metric #:key types)
+    "(integer ...) [#:types ((basis-blade-name ...) ...)]
+     example
+       (define s (space-new (list 1 1 1 1)))
+       (define vec-new (list-ref (alist-ref-q s mv-types) 0))"
+    (let*
+      ( (basis-blades (blade-ids (length metric)))
+        (blades-per-grade
+          (map-map blade-id->string (tail (map tail (group basis-blades blade-id-grade))))))
+      (alist-q basis-blades basis-blades
+        mv-types (mv-types-new (append blades-per-grade (or types null)))))))
