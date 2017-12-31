@@ -20,11 +20,13 @@
     basis-op
     basis-reverse
     basis-scalar
+    mv-coordinates
     mv-dual
     mv-gp
     mv-grade-inversion
     mv-ip
     mv-new
+    mv-norm
     mv-null?
     mv-op
     mv-reverse
@@ -33,7 +35,7 @@
     mv-sp
     mv-subtract
     mv-sum
-    space-base
+    space-basis
     space-new
     space-type
     sph-math-cga-description)
@@ -264,6 +266,14 @@
   (define* (mv-sp a b #:optional metric) "list:mv list:mv [list:metric]-> mv"
     (mv-scalar (mv-ip a b metric)))
 
+  (define (mv-coordinates a) (map tail a))
+
+  (define (mv-norm a)
+    "mv -> number
+     magnitude"
+    ; sum the squares of the scalars and take the square root
+    (sqrt (fold (l (a result) (let (a (basis-scalar a)) (+ result (* a a)))) 0 a)))
+
   (define (mv-type base-names)
     "symbol/integer ... -> procedure:{scalar ... -> mv}
      returns a procedure that when called with scalars returns a multivector with the
@@ -283,12 +293,12 @@
      (space-type-get s 2) gets the default bivector type"
     (alist-ref (alist-ref-q s types) key))
 
-  (define (space-base s name . scalars)
+  (define (space-basis s name . scalars)
     "alist symbol number ... -> basis/false
      create a basis blade object corresponding to the given space object.
      examples
-       (space-base-new s (q e1) 1)
-       (space-base-new s (q e1e2) 2.5)"
+       (space-basis-new s (q e1) 1)
+       (space-basis-new s (q e1e2) 2.5)"
     (and-let* ((id (alist-ref (alist-ref-q s bases) name))) (basis-new id scalars)))
 
   (define* (space-new metric #:key types)

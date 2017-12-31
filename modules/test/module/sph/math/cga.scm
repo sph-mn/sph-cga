@@ -13,6 +13,13 @@
         (strings (map blade-id->string (blade-ids (make-list 4 1)))))
       (equal? expected strings)))
 
+  ; mv-norm, mv-op
+  ;(define p1 (vec-new 0.96 0.0 0.02))
+  ;(define p2 (vec-new -0.19 0.86 0.16))
+  ;(debug-log (mv-norm (mv-op p1 p2)))
+  ;op: (0.8256 0.15739999999999998 -0.0172)
+  ;op norm: 0.8406461562393538
+
   (test-execute-procedures-lambda blade-id->string (blade-count 1 2 2 4 3 8 4 16 5 32 6 64)
     (blade-ids 1 #t 2 #t 3 #t 4 #t 5 #t 6 #t) (mv-null? ((unquote (mv-new))) #t)
     (blade-ip (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 1))
