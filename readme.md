@@ -7,8 +7,7 @@ current features
 * basis blade and multivector objects
 * geometric/inner/outer product for basis blades and multivectors
 * purely functional
-* k-blade pre-generation for the desired number of dimensions
-* no macros and optimisations yet
+* no macros and performance optimisations yet
 
 # license
 gpl3+
