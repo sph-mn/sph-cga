@@ -29,8 +29,8 @@
     mv-op
     mv-reverse
     mv-scalar
-    mv-scalar-product
     mv-simplify
+    mv-sp
     mv-subtract
     mv-sum
     space-base
@@ -261,7 +261,7 @@
      returns the sum of all scalar values in multivector (not the pseudoscalar)"
     (apply + (filter (l (a) (zero? (basis-id a))) a)))
 
-  (define* (mv-scalar-product a b #:optional metric) "list:mv list:mv [list:metric]-> mv"
+  (define* (mv-sp a b #:optional metric) "list:mv list:mv [list:metric]-> mv"
     (mv-scalar (mv-ip a b metric)))
 
   (define (mv-type base-names)
