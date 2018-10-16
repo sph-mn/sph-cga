@@ -51,7 +51,7 @@
       alist-q
       alist-ref
       alist-ref-q)
-    (only (sph list one) group)
+    (only (sph list other) group)
     (only (sph list)
       produce
       map-map
@@ -93,7 +93,13 @@
         (loop (bitwise-arithmetic-shift-right bits 1)
           (if (= 1 (bitwise-and 1 bits)) (+ 1 result) result)))))
 
-  (define (factorial a) (if (<= a 1) 1 (* a (factorial (- a 1)))))
+  (define (factorial a) "number -> number" (if (<= a 1) 1 (* a (factorial (- a 1)))))
+
+  (define (minus-one-expt a)
+    "number -> number
+     same as \"expt(-1, a)\""
+    (if (even? a) 1 -1))
+
   (define basis-id-grade bit-count)
 
   (define (basis-id-sign a b)
@@ -185,15 +191,17 @@
   (define (basis-grade-inversion a)
     "blade -> blade
      grade inversion"
-    (basis-new (basis-id a) (expt -1 (basis-id-grade (basis-id a)))))
+    (basis-new (basis-id a) (* (basis-scalar a) (minus-one-expt (basis-id-grade (basis-id a))))))
 
   (define (basis-reverse a) "blade -> blade"
-    (let (g (basis-id-grade (basis-id a))) (basis-new (basis-id a) (expt -1 (/ (* g (- g 1)) 2)))))
+    (let (g (basis-id-grade (basis-id a)))
+      (basis-new (basis-id a) (* (basis-scalar a) (minus-one-expt (/ (* g (- g 1)) 2))))))
 
   (define (basis-conjugate a)
     "blade -> blade
      clifford conjugate"
-    (let (g (basis-id-grade (basis-id a))) (basis-new (basis-id a) (expt -1 (/ (* g (+ g 1)) 2)))))
+    (let (g (basis-id-grade (basis-id a)))
+      (basis-new (basis-id a) (* (basis-scalar a) (minus-one-expt (/ (* g (+ g 1)) 2))))))
 
   (define (basis-new id s) "integer:bits integer:scalar:scale-factor -> pair:blade" (pair id s))
   (define basis-id first)
@@ -255,15 +263,23 @@
   (define (mv-reverse a) (map basis-reverse a))
   (define (mv-grade-inversion a) (map basis-grade-inversion a))
 
+  (define* (mv-versor-inverse a #:optional metric)
+    (let* ((a-reverse (mv-reverse a)) (s (mv-sp a a-reverse metric))) (mv-gp a-reverse (/ 1 s))))
+
   (define (mv-dual a metric) "mv list ->"
-    (mv-ip (mv-new (basis-new (- (bitwise-arithmetic-shift-left 1 (length metric)) 1) 1)) metric))
+    (let*
+      ( (pseudoscalar-id (- (bitwise-arithmetic-shift-left 1 (length metric)) 1))
+        (pseudoscalar (mv-new (basis-new pseudoscalar-id 1))))
+      (mv-ip a (mv-versor-inverse pseudoscalar) metric)))
 
   (define (mv-scalar a)
     "mv -> scalar
      returns the sum of all scalar values in multivector (not the pseudoscalar)"
     (apply + (filter (l (a) (zero? (basis-id a))) a)))
 
-  (define* (mv-sp a b #:optional metric) "list:mv list:mv [list:metric]-> mv"
+  (define* (mv-sp a b #:optional metric)
+    "list:mv list:mv [list:metric]-> mv
+     scalar product"
     (mv-scalar (mv-ip a b metric)))
 
   (define (mv-coordinates a) (map tail a))

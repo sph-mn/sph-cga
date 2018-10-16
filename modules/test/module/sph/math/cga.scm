@@ -2,15 +2,17 @@
   (import
     (sph math cga))
 
-  (define-test (blade-ids a)
-    (let* ((dim (first a)) (ids (blade-ids (make-list dim 1)))) (= (blade-count dim) (length ids))))
+  (define-test (basis-ids a)
+    (let* ((dim (first a)) (ids (basis-ids dim))) (= (basis-count dim) (length ids))))
 
-  (define-test (blade-id->string) "also tests the sorting of blade-ids"
+  (define-test (basis-id->string) "also tests the sorting of basis-ids"
     (let*
       ( (expected
           (list "s" "e1"
-            "e2" "e3" "e4" "e12" "e13" "e23" "e14" "e24" "e34" "e123" "e124" "e134" "e234" "e1234"))
-        (strings (map blade-id->string (blade-ids (make-list 4 1)))))
+            "e2" "e3"
+            "e4" "e1e2"
+            "e1e3" "e2e3" "e1e4" "e2e4" "e3e4" "e1e2e3" "e1e2e4" "e1e3e4" "e2e3e4" "e1e2e3e4"))
+        (strings (map basis-id->string (basis-ids 4))))
       (equal? expected strings)))
 
   ; mv-norm, mv-op
@@ -20,18 +22,18 @@
   ;op: (0.8256 0.15739999999999998 -0.0172)
   ;op norm: 0.8406461562393538
 
-  (test-execute-procedures-lambda blade-id->string (blade-count 1 2 2 4 3 8 4 16 5 32 6 64)
-    (blade-ids 1 #t 2 #t 3 #t 4 #t 5 #t 6 #t) (mv-null? ((unquote (mv-new))) #t)
-    (blade-ip (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 1))
-    (blade-op (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 0))
-    (blade-gp (unquote (list (blade-new 1 3) (blade-new 2 4))) (3 . 12)
-      (unquote (list (blade-new 1 1) (blade-new 1 1))) (0 . 1)
-      (unquote (list (blade-new 1 1) (blade-new 2 1))) (3 . 1))
+  (test-execute-procedures-lambda basis-id->string (basis-count 1 2 2 4 3 8 4 16 5 32 6 64)
+    (basis-ids 1 #t 2 #t 3 #t 4 #t 5 #t 6 #t) (mv-null? ((unquote (mv-new))) #t)
+    (basis-ip (unquote (list (basis-new 1 1) (basis-new 1 1))) (0 . 1))
+    (basis-op (unquote (list (basis-new 1 1) (basis-new 1 1))) (0 . 0))
+    (basis-gp (unquote (list (basis-new 1 3) (basis-new 2 4))) (3 . 12)
+      (unquote (list (basis-new 1 1) (basis-new 1 1))) (0 . 1)
+      (unquote (list (basis-new 1 1) (basis-new 2 1))) (3 . 1))
     (mv-simplify
       ( (unquote
-          (mv-new (blade-new 1 3) (blade-new 2 4) (blade-new 2 3) (blade-new 2 3) (blade-new 1 4))))
+          (mv-new (basis-new 1 3) (basis-new 2 4) (basis-new 2 3) (basis-new 2 3) (basis-new 1 4))))
       ((1 . 7) (2 . 10)))
-    (mv-gp
+    #;(mv-gp
       (unquote
-        (list (mv-new (blade-new 1 3) (blade-new 2 4)) (mv-new (blade-new 1 5) (blade-new 2 9))))
+        (list (mv-new (basis-new 1 3) (basis-new 2 4)) (mv-new (basis-new 1 5) (basis-new 2 9))))
       #t)))
