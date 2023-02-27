@@ -1,5 +1,5 @@
 experimental code for implementing geometric algebras.
-see also [learning about conformal geometric algebra 2017](http://sph.mn/c/view/13e).
+see also [learning about conformal geometric algebra 2017](https://sph.mn/textual/more/geometric-algebra.html).
 
 not thoroughly validated and largely didactic at this point.
 
